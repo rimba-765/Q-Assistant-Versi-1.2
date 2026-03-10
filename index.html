@@ -126,7 +126,8 @@
             Mic: () => <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" x2="12" y1="19" y2="22"/></svg>,
             Refresh: () => <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>,
             Chart: () => <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>,
-            Camera: () => <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>
+            Camera: () => <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/><circle cx="12" cy="13" r="3"/></svg>,
+            Minus: () => <svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="5" y1="12" x2="19" y2="12"></line></svg>
         };
 
         const initialItems = ["Ayam Gede (Mentah)", "Lele Segar", "Telur Ayam", "Beras", "Minyak Goreng", "Gula Pasir", "Gas LPG 3Kg", "Sabun Cuci", "Lunch Box Size M", "Cup Minum", "Kangkung", "Tahu Putih (Mentah)"];
@@ -184,7 +185,7 @@
             const chatEndRef = useRef(null);
 
             // STATE UNTUK DRAG BUBBLE FIN
-            const [finPos, setFinPos] = useState({ right: 20, bottom: 96 }); // Default position in px
+            const [finPos, setFinPos] = useState({ right: 20, bottom: 96 }); 
             const isDraggingFin = useRef(false);
             const finStartPos = useRef({ x: 0, y: 0, right: 0, bottom: 0 });
             const [hasDragged, setHasDragged] = useState(false);
@@ -217,7 +218,7 @@
             const [confirmModal, setConfirmModal] = useState({ show: false, title: '', message: '', onConfirm: null });
             const [showSettings, setShowSettings] = useState(false);
             const [isSaving, setIsSaving] = useState(false);
-            const [isExited, setIsExited] = useState(false); // State untuk layar penutup
+            const [isExited, setIsExited] = useState(false); 
 
             const formatNumber = (num) => new Intl.NumberFormat('id-ID').format(num);
 
@@ -279,12 +280,9 @@
                     message: 'Ingin menutup sesi ini? Tenang Bos, semua data Anda sudah otomatis tersimpan di dalam brankas.',
                     onConfirm: () => {
                         setConfirmModal({ show: false, title: '', message: '', onConfirm: null });
-                        setIsExited(true); // Memunculkan layar penutup yang lebih elegan
+                        setIsExited(true); 
                         
-                        // Coba paksa tutup untuk browser yang mengizinkan (seperti Chrome di Android)
-                        setTimeout(() => {
-                            window.close();
-                        }, 500);
+                        setTimeout(() => { window.close(); }, 500);
                     }
                 });
             };
@@ -389,25 +387,61 @@
             }, []);
 
             const processAddIncome = (data) => {
-                const newIncome = { id: 'inc-' + Date.now() + Math.random(), date: data.date, source: toTitleCase(data.source), amount: data.amount, timestamp: Date.now() };
+                // PERBAIKAN: Fallback baca dari 'total' jika 'amount' tidak ada/nol karena AI salah map property
+                let rawAmount = (data.amount !== undefined && data.amount !== 0) ? data.amount : (data.total !== undefined ? data.total : 0);
+                let safeAmount = parseFloat(rawAmount.toString().replace(/[^0-9.-]/g, ''));
+                if (isNaN(safeAmount)) safeAmount = 0;
+                
+                const newIncome = { id: 'inc-' + Date.now() + Math.random(), date: data.date || getLocalDateStr(), source: toTitleCase(data.source || 'Pemasukan'), amount: safeAmount, timestamp: Date.now() };
                 setIncomes(prev => [newIncome, ...prev].sort((a,b) => b.timestamp - a.timestamp));
                 showStatus('Pemasukan Berhasil Ditambahkan Otomatis!');
             };
 
             const processAddAgenda = (data) => {
-                const newAg = { id: 'agd-'+Date.now() + Math.random(), date: data.date, title: toTitleCase(data.title), amount: data.amount, type: data.agendaType || 'keluar', isPaid: false };
+                let rawAmount = (data.amount !== undefined && data.amount !== 0) ? data.amount : (data.total !== undefined ? data.total : 0);
+                let safeAmount = parseFloat(rawAmount.toString().replace(/[^0-9.-]/g, ''));
+                if (isNaN(safeAmount)) safeAmount = 0;
+
+                const newAg = { id: 'agd-'+Date.now() + Math.random(), date: data.date || getLocalDateStr(), title: toTitleCase(data.title || 'Agenda'), amount: safeAmount, type: data.agendaType || 'keluar', isPaid: false };
                 setAgendas(prev => [...prev, newAg].sort((a,b) => new Date(a.date) - new Date(b.date)));
                 showStatus('Tagihan/Operasional Berhasil Ditambahkan Otomatis!');
             };
 
             const processAddExpense = async (data) => {
-                const cartTotal = data.items.reduce((acc, curr) => acc + curr.total, 0);
+                // PERBAIKAN: Menangani Pengeluaran Tanpa Item (Hanya Total Nominal) dan Pelindung Anti NaN
+                let itemsList = Array.isArray(data.items) ? data.items : [];
+                let rawTotal = (data.total !== undefined && data.total !== 0) ? data.total : (data.amount !== undefined ? data.amount : 0);
+                let safeTotal = parseFloat(rawTotal.toString().replace(/[^0-9.-]/g, ''));
+                if (isNaN(safeTotal)) safeTotal = 0;
+                
+                // Pastikan setiap item di dalam array juga bersih dari NaN
+                itemsList = itemsList.map((i, idx) => {
+                    const iQty = i.qty ? parseFloat(i.qty.toString().replace(/[^0-9.-]/g, '')) : 1;
+                    const rawITotal = i.total || i.price || i.amount || 0;
+                    const iTotal = parseFloat(rawITotal.toString().replace(/[^0-9.-]/g, ''));
+                    return {
+                        id: Date.now() + idx + Math.random(),
+                        name: toTitleCase(i.name || 'Item Tidak Diketahui'),
+                        qty: isNaN(iQty) ? 1 : iQty,
+                        unit: i.unit || 'Pcs',
+                        total: isNaN(iTotal) ? 0 : iTotal
+                    };
+                });
+
+                if (itemsList.length === 0 && safeTotal > 0) {
+                    // Jika AI mengirim total pengeluaran tanpa item, gunakan nama item dummy
+                    itemsList = [{ id: Date.now() + Math.random(), name: "Belanja Bahan Baku", qty: 1, unit: "Ls", total: safeTotal }];
+                } else if (itemsList.length > 0) {
+                    // Jika ada rincian item (seperti dari nota struk), paksa total menggunakan hasil kalkulasi rincian item
+                    safeTotal = itemsList.reduce((acc, curr) => acc + curr.total, 0);
+                }
+
                 const noteId = (isLocalMode || !paths) ? 'local-' + Date.now() + Math.random() : db.collection(paths.history).doc().id;
                 const noteData = {
                     id: noteId,
-                    date: data.date,
-                    items: data.items.map((i, idx) => ({...i, id: Date.now() + idx, name: toTitleCase(i.name)})),
-                    total: cartTotal,
+                    date: data.date || getLocalDateStr(),
+                    items: itemsList,
+                    total: safeTotal,
                     timestamp: Date.now()
                 };
 
@@ -416,7 +450,7 @@
                 } else {
                     await db.collection(paths.history).doc(noteId).set(noteData);
                 }
-                showStatus('Daftar Belanja Berhasil Ditambahkan Otomatis!');
+                showStatus('Arsip Pengeluaran Ditambahkan!');
             };
 
             const handleFileChange = (e) => {
@@ -434,17 +468,8 @@
             };
 
             const fetchFinAI = async (userText, imageData, chatHistory) => {
-                // =======================================================================
-                // PENTING: ISI API KEY ANDA DI BAWAH INI SEBELUM MENGGUNAKAN DI GITHUB
-                // =======================================================================
-                const apiKey = "AIzaSyBKVgmmvg3JzaSE5oT56lsf94DsimB3CV4"; // <--- Ganti string kosong ini dengan API Key dari Google AI Studio
-                
-                if (!apiKey || apiKey === "") {
-                    return { reply: "Bos, API Key Gemini belum diisi nih. Tolong masukkan API Key di kode sumber webnya (variabel `apiKey`) supaya Fin bisa mikir dan bantu analisis lagi! 😅", actions: [] };
-                }
-
-                // Menggunakan model gemini-flash-latest sesuai permintaan
-                const url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=" + apiKey;
+                const apiKey = "AIzaSyCSObrJOii_N21mkR6PzHMt488NpCZTvJE"; 
+                var url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=" + apiKey;
                 
                 const todayStr = getLocalDateStr();
                 const currentMonthStr = todayStr.substring(0, 7);
@@ -454,167 +479,101 @@
                 
                 const monthlyInc = incomes.filter(i => i.date.startsWith(currentMonthStr)).reduce((s,i) => s + i.amount, 0);
                 const monthlyExp = history.filter(h => h.date.startsWith(currentMonthStr)).reduce((s,h) => s + h.total, 0);
-                
-                const pendingBills = agendas.filter(a => !a.isPaid).map(a => `- ${a.title} (Rp ${formatNumber(a.amount)}, Tgl: ${a.date})`);
-                const pendingBillsStr = pendingBills.length > 0 ? pendingBills.join('\n') : "Bagus! Tidak ada tagihan tertunda saat ini.";
 
-                const sysPrompt = `Anda adalah "Fin", Asisten & Manajer Keuangan (Financial Advisor) internal untuk web app "Warung Mbah Marto".
-Gaya bicara: Profesional, cerdas, santai, dan proaktif memanggil pengguna "Bos".
+                // PERBAIKAN PROMPT: Menginstruksikan AI secara tegas apa yang harus dilakukan saat "Ya", dan membebaskan batasan skema JSON kaku
+                const sysPrompt = `Anda adalah "Fin", Asisten & Manajer Keuangan internal untuk web app "Warung Mbah Marto".
+Gaya bicara: Profesional, cerdas, santai, memanggil pengguna "Bos".
 
-Data Kas Saat Ini (WAJIB JADIKAN ACUAN UNTUK MENJAWAB LAPORAN):
-- Saldo Kas Riil Tersedia: Rp ${formatNumber(currentBalance)}
-- Target Omzet Harian: Rp ${formatNumber(settings.targetOmzet)}
-- Batas Belanja Harian: Rp ${formatNumber(settings.maxBelanja)}
+Data Kas Saat Ini:
+- Kas Tersedia: Rp ${formatNumber(currentBalance)}
 - Rekap Hari Ini (${todayStr}) -> Masuk: Rp ${formatNumber(todayIncTotal)} | Keluar: Rp ${formatNumber(todayExpTotal)}
-- Laporan Bulan Ini -> Masuk: Rp ${formatNumber(monthlyInc)} | Keluar: Rp ${formatNumber(monthlyExp)}
-- Tagihan Belum Dibayar: \n${pendingBillsStr}
 
-TUGAS UTAMA:
-1. INPUT DATA: Terjemahkan input transaksi menjadi JSON yang rapi.
-2. JAWAB LAPORAN: Jika pengguna meminta "Analisa Kas", "Tagihan", "Rekap Harian", atau "Laporan Bulanan", JAWABLAH DENGAN DATA DI ATAS. Buat kesimpulan apakah untung/rugi, overbudget atau aman.
+ATURAN KHUSUS UNTUK GAMBAR (FOTO STRUK/SCREENSHOT):
+1. JANGAN langsung menghasilkan 'actions' saat baru menerima gambar. Analisa dan tanyakan konfirmasi dulu.
+2. ANALISA GAMBAR DENGAN TELITI: Pisahkan transaksi beda tanggal menjadi objek terpisah (MULTI TRANSAKSI). 
+   - NOTA STRUK: Rinci item belanja ke dalam array 'items'.
+   - REKAP PENGELUARAN (Hanya tanggal & nominal tanpa rincian item): WAJIB buat 1 item dummy di dalam array "items" dengan rincian persis seperti ini: {"name": "Belanja Bahan Baku", "qty": 1, "unit": "Ls", "total": <nominal_hari_itu>}.
+3. Tuliskan RINCIAN LENGKAP di 'reply' lalu TANYAKAN KONFIRMASI (Maukah Bos menyimpan data ini?). Kosongkan array 'actions' [].
+4. KETIKA PENGGUNA MENGONFIRMASI ("Ya", "Simpan", "Gass", "Oke"): 
+   - Anda WAJIB membaca ulang pesan Anda SEBELUMNYA yang berisi rincian.
+   - Ekstrak SEMUA rincian transaksi tersebut ke dalam array 'actions' HARI INI JUGA.
+   - JANGAN MENGHASILKAN ACTIONS KOSONG JIKA PENGGUNA BILANG "YA".
+   - Pastikan nominal uang (amount/total/qty) berisi ANGKA MURNI (Number) yang tepat sesuai rincian sebelumnya, bukan 0.
 
-ATURAN ANALISA KEUANGAN (PROPORSI IDEAL & OVERBUDGET):
-- Beritahu Bos bahwa HPP (Modal Belanja Bahan Baku) yang sehat untuk warung/resto maksimal adalah 50% dari Omzet. 
-- Sisa 50% lainnya dialokasikan untuk operasional (listrik, gaji) dan profit bersih.
-- Jika rasio belanja bulan ini atau hari ini melebihi 50% dari pemasukan, beri teguran ramah bahwa warung sedang "OVERBUDGET" dan berikan saran untuk ngerem belanja besok.
-- Jika rasionya di bawah 50%, puji Bos bahwa "PROFIT AMAN & SEHAT".
-
-ATURAN KHUSUS UNTUK GAMBAR (FOTO STRUK ATAU SCREENSHOT APLIKASI Q-NOTA):
-1. JANGAN langsung menghasilkan 'actions' saat menerima gambar.
-2. ANALISA GAMBAR DENGAN SANGAT TELITI:
-   - Jika itu "Histori Pemasukan" (Screenshot aplikasi): Baca semua baris (Sumber seperti OFFLINE QRIS/GRABFOOD, Tanggal seperti 7 Mar, dan Nominal seperti + Rp 68.000).
-   - Jika itu "Riwayat Pengeluaran" / Arsip (Screenshot aplikasi): Baca Tanggal (misal 10 MAR 2026) dan Total (misal Rp 299.000). Gunakan nama barang "Belanja Resto" qty 1.
-   - Jika struk belanja biasa: Baca daftar barang, qty, dan harga.
-3. Tuliskan RINCIAN LENGKAP di 'reply' (tanggal konversi ke format YYYY-MM-DD, nominal, sumber/barang) lalu TANYAKAN KONFIRMASI (contoh: "Bos, Fin nemu data ini:\\n1. Grabfood (2026-03-07) Rp 102.829\\n...\\nMau disimpan ke kas?"). Kosongkan array 'actions' []. Untuk tanggal seperti "7 Mar", asumsikan tahun saat ini (${todayStr.substring(0,4)}).
-4. INGAT KONTEKS! Jika Bos menjawab "Ya", "Oke", "Simpan" pada konfirmasi Anda, BACA KEMBALI rincian di pesan Anda sebelumnya, Hasilkan 'actions' untuk SEMUA baris data tersebut sekaligus, lalu konfirmasi di 'reply' bahwa data sukses disimpan.
-
-ANDA WAJIB MEMBALAS HANYA DENGAN JSON MURNI DENGAN STRUKTUR BERIKUT:
+ANDA WAJIB MEMBALAS HANYA DENGAN JSON MURNI DENGAN STRUKTUR SEPERTI INI:
 {
-  "reply": "Pesan balasan Anda. (PENTING: Gunakan \\n untuk baris baru, jangan gunakan Enter asli di dalam string agar JSON tidak error)",
+  "reply": "Pesan balasan Anda. Gunakan \\n untuk baris baru.",
   "actions": [
-     // Isi array ini HANYA JIKA pengguna input manual ATAU sudah mengonfirmasi "Ya/Simpan" dari daftar data gambar di chat sebelumnya.
+     // Contoh format Pemasukan:
+     {"type": "add_income", "data": {"date": "YYYY-MM-DD", "source": "Grabfood", "amount": 102829}},
+     // Contoh format Belanja (Ada item rincian struk): 
+     {"type": "add_expense", "data": {"date": "YYYY-MM-DD", "items": [{"name": "Beras", "qty": 1, "unit": "Kg", "total": 15000}]}},
+     // Contoh format Pengeluaran (Hanya summary total/arsip screenshot tanpa rincian): 
+     {"type": "add_expense", "data": {"date": "YYYY-MM-DD", "items": [{"name": "Belanja Bahan Baku", "qty": 1, "unit": "Ls", "total": 250000}]}}
   ]
 }
 
-FORMAT OBJECT "actions" (Bisa diisi BANYAK object untuk input massal sekaligus):
-1. Pemasukan: {"type": "add_income", "data": {"date": "YYYY-MM-DD", "source": "Grabfood", "amount": 102829}}
-2. Belanja Bahan Baku: {"type": "add_expense", "data": {"date": "YYYY-MM-DD", "items": [{"name": "Belanja Resto", "qty": 1, "unit": "Pack", "total": 299000}]}}
-3. Agenda/Tagihan: {"type": "add_agenda", "data": {"date": "YYYY-MM-DD", "title": "Listrik", "amount": 100000, "agendaType": "keluar"}}
+ATURAN WAJIB: Langsung output text JSON murni tanpa markdown \`\`\`json.`;
 
-ATURAN WAJIB: Jangan gunakan markdown code block (\`\`\`json) di respons Anda, langsung output object JSON.`;
-
-                // --- PERBAIKAN STRUKTUR HISTORY AGAR TIDAK DITOLAK API ---
-                let contents = [];
-                let safeHistory = chatHistory.slice(-6); // Ambil 6 chat terakhir
+                let conversationText = "=== RIWAYAT OBROLAN ===\n";
+                let safeHistory = chatHistory.slice(-6); 
                 
-                // Gemini API mewajibkan role pertama dalam 'contents' adalah 'user'. 
-                // Kita buang chat 'model' (sapaan awal Fin) jika ada di urutan paling awal.
-                while (safeHistory.length > 0 && safeHistory[0].sender === 'fin') {
-                    safeHistory.shift();
-                }
-
-                safeHistory.forEach(chat => {
-                    const role = chat.sender === 'fin' ? 'model' : 'user';
-                    const text = chat.text || "Gambar terlampir sebelumnya";
-                    
-                    // Gabungkan teks jika ada dua role berturut-turut agar struktur API valid (user->model->user)
-                    if (contents.length > 0 && contents[contents.length - 1].role === role) {
-                        contents[contents.length - 1].parts[0].text += "\n\n" + text;
-                    } else {
-                        contents.push({ role: role, parts: [{ text: text }] });
-                    }
+                safeHistory.forEach((chat) => {
+                    const roleName = chat.sender === 'fin' ? 'Fin' : 'Bos';
+                    const msg = chat.text ? chat.text : "[Melampirkan Gambar]";
+                    conversationText += `${roleName}: ${msg}\n\n`;
                 });
 
-                const currentParts = [];
-                if (userText) currentParts.push({ text: userText });
-                else if (imageData) currentParts.push({ text: "Tolong analisa gambar nota/catatan/tangkapan layar ini dengan teliti." });
+                conversationText += "Tugas: Berikan respons JSON murni sesuai instruksi sistem berdasarkan konteks riwayat obrolan di atas.";
 
+                let contentObj;
                 if (imageData) {
-                    currentParts.push({
-                        inlineData: {
-                            mimeType: imageData.mimeType,
-                            data: imageData.data
-                        }
-                    });
-                }
-
-                // Gabungkan prompt yang baru diketik ke pesan user yang terakhir (jika ada)
-                if (contents.length > 0 && contents[contents.length - 1].role === 'user') {
-                    contents[contents.length - 1].parts.push(...currentParts);
+                    contentObj = { role: "user", parts: [{ text: conversationText }, { inlineData: { mimeType: imageData.mimeType, data: imageData.data } }] };
                 } else {
-                    contents.push({ role: "user", parts: currentParts });
+                    contentObj = { parts: [{ text: conversationText }] };
                 }
 
+                // PERBAIKAN: Menghapus responseSchema agar tidak terjadi error penolakan validasi server yang menyebabkan loading/retry tiada henti, diganti ke temperature rendah agar format JSON tetap stabil.
                 const payload = {
-                    contents: contents,
+                    contents: [contentObj],
                     systemInstruction: { parts: [{ text: sysPrompt }] },
                     generationConfig: {
                         responseMimeType: "application/json",
-                        responseSchema: {
-                            type: "OBJECT",
-                            properties: {
-                                reply: { type: "STRING" },
-                                actions: {
-                                    type: "ARRAY",
-                                    items: {
-                                        type: "OBJECT",
-                                        properties: {
-                                            type: { type: "STRING" },
-                                            data: {
-                                                type: "OBJECT",
-                                                properties: {
-                                                    date: { type: "STRING" },
-                                                    source: { type: "STRING" },
-                                                    amount: { type: "NUMBER" },
-                                                    title: { type: "STRING" },
-                                                    agendaType: { type: "STRING" },
-                                                    items: {
-                                                        type: "ARRAY",
-                                                        items: {
-                                                            type: "OBJECT",
-                                                            properties: {
-                                                                name: { type: "STRING" },
-                                                                qty: { type: "NUMBER" },
-                                                                unit: { type: "STRING" },
-                                                                total: { type: "NUMBER" }
-                                                            }
-                                                        }
-                                                    }
-                                                }
-                                            }
-                                        },
-                                        required: ["type", "data"]
-                                    }
-                                }
-                            },
-                            required: ["reply", "actions"]
-                        }
+                        temperature: 0.2
                     }
                 };
 
-                let delay = 1000;
-                for (let i = 0; i < 5; i++) {
+                // PERBAIKAN: Mempercepat delay retry jika terjadi bad response, agar tidak 'loading' selamanya
+                let delay = 500;
+                for (let i = 0; i < 4; i++) {
                     try {
                         const res = await fetch(url, { method: 'POST', body: JSON.stringify(payload), headers: { 'Content-Type': 'application/json' }});
                         if (!res.ok) {
-                            const errData = await res.text();
-                            console.error("API Error Response:", errData);
-                            throw new Error(`API Error: ${res.status}`);
+                            let errMsg = res.statusText;
+                            try {
+                                const errData = await res.json();
+                                errMsg = errData.error?.message || errMsg;
+                            } catch(e) {}
+                            const error = new Error(`HTTP Error ${res.status}: ${errMsg}`);
+                            if (res.status === 400 || res.status === 401 || res.status === 403) error.isFatal = true;
+                            throw error;
                         }
                         const data = await res.json();
                         const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
                         
+                        if (!rawText) throw new Error("AI memberikan respons kosong atau format diblokir.");
+
                         let cleanJson = rawText.replace(/```json/g, '').replace(/```/g, '').trim();
                         cleanJson = cleanJson.replace(/\n(?! *["}\]])/g, "\\n"); 
                         
                         return JSON.parse(cleanJson);
                     } catch (err) {
-                        if (i === 4) {
+                        if (err.isFatal || i === 3) {
                             console.error("FetchFinAI Final Error:", err);
-                            return { reply: "Waduh Bos, Fin gagal mikir nih atau formatnya salah. Bisa jadi API Key-nya tidak valid. Coba cek log atau ketik ulang ya.", actions: [] };
+                            return { reply: `Waduh Bos, Fin agak pusing nih bacanya. Detail Error: ${err.message}. Coba ulangi dengan kalimat lain ya.`, actions: [] };
                         }
                         await new Promise(r => setTimeout(r, delay));
-                        delay *= 2;
+                        delay *= 1.5; // Backoff cepat: 0.5s, 0.75s, 1.1s
                     }
                 }
             };
@@ -633,7 +592,6 @@ ATURAN WAJIB: Jangan gunakan markdown code block (\`\`\`json) di respons Anda, l
                 setAttachedImage(null);
                 setIsTyping(true);
                 
-                // --- PERBAIKAN: Gunakan status obrolan TERBARU (termasuk yang baru saja diketik) ---
                 const historyToPass = [...chats, newUserChat];
                 const responseObj = await fetchFinAI(text, imageToProcess, historyToPass);
                 
@@ -738,12 +696,11 @@ ATURAN WAJIB: Jangan gunakan markdown code block (\`\`\`json) di respons Anda, l
                     if (!isUpdating) {
                         const totalBelanjaHariIni = history.filter(h => h.date === transactionDate).reduce((sum, h) => sum + h.total, 0) + cartTotal;
                         
-                        // Cek acuan omzet hari ini, kalau 0 pakai omzet kemarin untuk dianalisa rasionya
                         let todayInc = incomes.filter(i => i.date === transactionDate).reduce((s,i) => s + i.amount, 0);
                         let prevDayObj = new Date(transactionDate); prevDayObj.setDate(prevDayObj.getDate() - 1);
                         let prevInc = incomes.filter(i => i.date === getLocalDateStr(prevDayObj)).reduce((s,i) => s + i.amount, 0);
                         let refOmzet = todayInc > 0 ? todayInc : prevInc;
-                        let idealDynamicBudget = refOmzet > 0 ? refOmzet * 0.5 : settings.maxBelanja; // 50% dari omzet
+                        let idealDynamicBudget = refOmzet > 0 ? refOmzet * 0.5 : settings.maxBelanja; 
 
                         let finMsg = `Bos, belanja senilai **Rp ${formatNumber(cartTotal)}** sudah Fin catat. Kas otomatis terpotong.\n\n`;
                         
@@ -1294,7 +1251,8 @@ ATURAN WAJIB: Jangan gunakan markdown code block (\`\`\`json) di respons Anda, l
                             </div>
                             <div className="flex items-center gap-2">
                                 <button onClick={handleResetChat} className="w-8 h-8 bg-white/10 text-white rounded-full flex items-center justify-center hover:bg-white/20 transition-colors" title="Bersihkan Obrolan"><div className="w-4 h-4"><Icons.Refresh/></div></button>
-                                <button onClick={() => setIsChatOpen(false)} className="w-8 h-8 bg-white/10 text-white rounded-full flex items-center justify-center hover:bg-white/20 transition-colors"><Icons.X/></button>
+                                {/* TOMBOL MINIMIZE DITAMBAHKAN DI SINI */}
+                                <button onClick={() => setIsChatOpen(false)} className="w-8 h-8 bg-white/10 text-white rounded-full flex items-center justify-center hover:bg-white/20 transition-colors" title="Minimize Chat"><div className="w-4 h-4"><Icons.Minus/></div></button>
                             </div>
                         </div>
                         <div className="flex-1 p-4 overflow-y-auto no-scrollbar flex flex-col gap-4">
@@ -1620,6 +1578,17 @@ ATURAN WAJIB: Jangan gunakan markdown code block (\`\`\`json) di respons Anda, l
                                                 </span>
                                                 <span className="font-black text-slate-900 text-sm">Rp {formatNumber(note.total)}</span>
                                             </div>
+                                            
+                                            {/* PERBAIKAN: List Detail Singkat untuk pengeluaran Auto */}
+                                            <div className="mb-4">
+                                                {note.items.map((it, idx) => (
+                                                    <div key={idx} className="flex justify-between text-[11px] text-slate-600">
+                                                        <span>{it.name} {it.qty !== 1 ? `(${it.qty})` : ''}</span>
+                                                        <span className="font-bold">Rp {formatNumber(it.total)}</span>
+                                                    </div>
+                                                ))}
+                                            </div>
+
                                             <div className="flex gap-2">
                                                 <button onClick={() => { setCart(note.items); setTransactionDate(note.date); setCurrentNoteId(note.id); setActiveTab('plan'); showStatus('Mode Edit Arsip'); }} className="flex-1 bg-slate-900 text-white py-3 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-slate-800 shadow-md">DETAIL / EDIT</button>
                                                 <button onClick={() => generatePrompt(note.items, note.date)} className="w-12 bg-indigo-50 text-indigo-500 rounded-xl flex justify-center items-center hover:bg-indigo-100"><div className="w-5 h-5"><Icons.Copy /></div></button>
